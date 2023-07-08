@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using Microsoft.Win32.SafeHandles;
+
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -31,6 +33,8 @@ namespace ProcessMonitoring
         [SupportedOSPlatform("windows5.1.2600")]
         internal static int GetParentProcessId(int processId)
         {
+            SafeFileHandle? snapshotHandle = null;
+
             try
             {
                 var pid = (uint)processId;
@@ -39,12 +43,12 @@ namespace ProcessMonitoring
                     dwSize = (uint)Marshal.SizeOf(typeof(PROCESSENTRY32))
                 };
 
-                var hSnapshot = PInvoke.CreateToolhelp32Snapshot_SafeHandle(CREATE_TOOLHELP_SNAPSHOT_FLAGS.TH32CS_SNAPPROCESS, pid);
+                snapshotHandle = PInvoke.CreateToolhelp32Snapshot_SafeHandle(CREATE_TOOLHELP_SNAPSHOT_FLAGS.TH32CS_SNAPPROCESS, pid);
 
-                if (hSnapshot.IsInvalid)
+                if (snapshotHandle.IsInvalid)
                     return -1;
 
-                if (!PInvoke.Process32First(hSnapshot, ref pe32))
+                if (!PInvoke.Process32First(snapshotHandle, ref pe32))
                 {
                     var error = (WIN32_ERROR)Marshal.GetLastWin32Error();
 
@@ -56,9 +60,13 @@ namespace ProcessMonitoring
                 {
                     if (pe32.th32ProcessID == pid)
                         return (int)pe32.th32ParentProcessID;
-                } while (PInvoke.Process32Next(hSnapshot, ref pe32));
+                } while (PInvoke.Process32Next(snapshotHandle, ref pe32));
             }
             catch { }
+            finally
+            {
+                snapshotHandle?.Dispose();
+            }
 
             return -1;
         }
