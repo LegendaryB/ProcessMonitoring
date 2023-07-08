@@ -15,14 +15,14 @@ Library to monitor process creation/destruction powered by C#.
 
 ## 📝 Usage
 
-### Retrieve a `IProcessMonitor` instance from the static `ProcessMonitorFactory`
+#### Retrieve a `IProcessMonitor` instance from the static `ProcessMonitorFactory`
 
 ```csharp
 // Possible monitor strategies are: ETW, WMI, Snapshots
 var monitor = ProcessMonitorFactory.Create(ProcessMonitoringStrategy.ETW);
 ```
 
-### Listening for the `ProcessStart` event
+#### Listening for the `ProcessStart` event
 ```csharp
 monitor.OnProcessStart += MonitorOnProcessStart;
 
@@ -37,7 +37,7 @@ private static void Monitor_OnProcessStart(object? sender, ProcessEventData data
 }
 ```
 
-### Listening for the `ProcessStop` event
+#### Listening for the `ProcessStop` event
 ```csharp
 monitor.OnProcessStop += MonitorOnProcessStop;
 
@@ -51,3 +51,6 @@ private static void Monitor_OnProcessStop(object? sender, ProcessEventData data)
         $"CommandLine: {data.CommandLine}\n");
 }
 ```
+
+#### `ProcessEventData`
+Depending on the used `ProcessMonitoringStrategy` 
