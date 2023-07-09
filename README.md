@@ -5,12 +5,12 @@
 
 [![GitHub license](https://img.shields.io/github/license/LegendaryB/ProcessMonitoring.svg?longCache=true&style=flat-square)](https://github.com/LegendaryB/ProcessMonitoring/blob/main/LICENSE.txt)
 
-Library to monitor process creation/destruction on Windows powered by C#.
+Library to monitor process start/stop on Windows powered by C#.
 </div><br>
 
 ## 🎯 Features
-* Monitoring via ETW - requires administrator privileges.
-* Monitoring via WMI - requires administrator privileges.
+* Process start/stop monitoring via ETW - requires administrator privileges.
+* Process start/stop monitoring via WMI - requires administrator privileges.
 
 ## 📝 Usage
 
