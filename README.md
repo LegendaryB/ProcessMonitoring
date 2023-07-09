@@ -76,3 +76,6 @@ private static void Monitor_OnProcessStop(object? sender, ProcessEventData data)
     Console.WriteLine();
 }
 ```
+
+#### `ProcessEventData`
+Depending on the choosen monitoring strategy the `ProcessEventData.Properties` dictionary may contain different data.
