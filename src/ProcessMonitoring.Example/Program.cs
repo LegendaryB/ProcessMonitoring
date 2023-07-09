@@ -5,8 +5,8 @@
         static async Task Main()
         {
             var monitor = ProcessMonitorFactory.Create(ProcessMonitoringStrategy.WMI);
-            monitor.OnProcessStart += Monitor_OnProcessStart;
-            monitor.OnProcessStop += Monitor_OnProcessStop;
+            monitor.OnProcessStart += OnProcessStart;
+            monitor.OnProcessStop += OnProcessStop;
 
             //await monitor.Stop();
             await monitor.Start();
@@ -14,7 +14,7 @@
             Console.ReadLine();
         }
 
-        private static void Monitor_OnProcessStart(object? sender, ProcessEventData data)
+        private static void OnProcessStart(object? sender, ProcessEventData data)
         {
             Console.ForegroundColor = ConsoleColor.Green;
 
@@ -33,7 +33,7 @@
             Console.WriteLine();
         }
 
-        private static void Monitor_OnProcessStop(object? sender, ProcessEventData data)
+        private static void OnProcessStop(object? sender, ProcessEventData data)
         {
             Console.ForegroundColor = ConsoleColor.Red;
 

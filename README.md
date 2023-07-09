@@ -29,10 +29,10 @@ monitor = ProcessMonitorFactory.CreateETWProcessMonitor();
 
 #### Listening for the `ProcessStart` event
 ```csharp
-monitor.OnProcessStart += MonitorOnProcessStart;
+monitor.OnProcessStart += OnProcessStart;
 monitor.Start();
 
-private static void Monitor_OnProcessStart(object? sender, ProcessEventData data)
+private static void OnProcessStart(object? sender, ProcessEventData data)
 {
     Console.ForegroundColor = ConsoleColor.Green;
 
@@ -54,10 +54,10 @@ private static void Monitor_OnProcessStart(object? sender, ProcessEventData data
 
 #### Listening for the `ProcessStop` event
 ```csharp
-monitor.OnProcessStop += MonitorOnProcessStop;
+monitor.OnProcessStop += OnProcessStop;
 monitor.Start();
 
-private static void Monitor_OnProcessStop(object? sender, ProcessEventData data)
+private static void OnProcessStop(object? sender, ProcessEventData data)
 {
     Console.ForegroundColor = ConsoleColor.Red;
 
