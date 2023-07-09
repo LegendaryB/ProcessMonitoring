@@ -1,6 +1,4 @@
-﻿using ProcessMonitoring.Events;
-
-namespace ProcessMonitoring
+﻿namespace ProcessMonitoring
 {
     public interface IProcessMonitor : IAsyncDisposable
     {

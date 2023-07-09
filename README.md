@@ -11,7 +11,6 @@ Library to monitor process creation/destruction powered by C#.
 ## 🎯 Features
 * Monitoring via ETW - Windows only, requires administrator privileges.
 * Monitoring via WMI - Windows only, requires administrator privileges.
-* Monitoring via process list snapshots - should work on windows and linux.
 
 ## 📝 Usage
 
@@ -20,11 +19,18 @@ Library to monitor process creation/destruction powered by C#.
 ```csharp
 // Possible monitor strategies are: ETW, WMI, Snapshots
 var monitor = ProcessMonitorFactory.Create(ProcessMonitoringStrategy.ETW);
+
+// OR
+monitor = ProcessMonitorFactory.CreateWMIProcessMonitor();
+
+// OR
+monitor = ProcessMonitorFactory.CreateETWProcessMonitor();
 ```
 
 #### Listening for the `ProcessStart` event
 ```csharp
 monitor.OnProcessStart += MonitorOnProcessStart;
+monitor.Start();
 
 private static void Monitor_OnProcessStart(object? sender, ProcessEventData data)
 {
@@ -40,6 +46,7 @@ private static void Monitor_OnProcessStart(object? sender, ProcessEventData data
 #### Listening for the `ProcessStop` event
 ```csharp
 monitor.OnProcessStop += MonitorOnProcessStop;
+monitor.Start();
 
 private static void Monitor_OnProcessStop(object? sender, ProcessEventData data)
 {
@@ -51,6 +58,3 @@ private static void Monitor_OnProcessStop(object? sender, ProcessEventData data)
         $"CommandLine: {data.CommandLine}\n");
 }
 ```
-
-#### `ProcessEventData`
-Depending on the used `ProcessMonitoringStrategy` 

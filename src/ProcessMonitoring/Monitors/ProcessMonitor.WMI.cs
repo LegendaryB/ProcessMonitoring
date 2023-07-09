@@ -1,5 +1,4 @@
-﻿using ProcessMonitoring.Events;
-using ProcessMonitoring.Extensions;
+﻿using ProcessMonitoring.Extensions;
 
 using System.Management;
 using System.Runtime.Versioning;
@@ -47,129 +46,117 @@ namespace ProcessMonitoring.Monitors
             return base.Stop();
         }
 
-        private void OnProcessStopEventArrived(object sender, EventArrivedEventArgs args)
-        {
-            try
-            {
-                var data = default(ProcessEventData);
-
-                var properties = args
-                    .NewEvent
-                    .Properties
-                    .ToDictionary();
-
-                var processName = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.ProcessNamePropertyKey));
-
-                if (string.IsNullOrWhiteSpace(processName))
-                    return;
-
-                var processId = Convert.ToInt32(properties.GetValueOrDefault(WMIProcessConstants.ProcessIdPropertyKey));
-                processId = processId == 0 ? -1 : processId;
-
-                var parentProcessId = Convert.ToInt32(properties.GetValueOrDefault(WMIProcessConstants.ParentProcessIdPropertyKey));
-                parentProcessId = parentProcessId == 0 ? -1 : parentProcessId;
-
-                var builder = ProcessEventDataBuilder.Create(processName)
-                        .SetProperties(properties)
-                        .SetProcessId(processId)
-                        .SetParentProcessId(parentProcessId);
-
-                if (processId != -1)
-                {
-                    _processDetailsObjectSearcher.Query = new ObjectQuery(string.Format(WMIProcessConstants.Win32ProcessDetailsQueryTemplate, processId));
-
-                    using (var results = _processDetailsObjectSearcher.Get())
-                    {
-                        var result = results.OfType<ManagementObject>().FirstOrDefault();
-
-                        if (result != null)
-                        {
-                            properties = result.Properties.ToDictionary();
-
-                            var caption = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.CaptionPropertyKey));
-                            var description = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.DescriptionPropertyKey));
-                            var executablePath = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.ExecutablePathPropertyKey));
-                            var commandLine = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.CommandLinePropertyKey));
-
-                            builder = builder
-                                .SetCaption(caption)
-                                .SetDescription(description)
-                                .SetExecutablePath(executablePath)
-                                .SetCommandLine(commandLine);
-                        }
-                    }
-                }
-
-                data = builder.Build();
-
-                OnProcessStopped(data);
-            }
-            catch { }
-        }
-
         private void OnProcessStartEventArrived(object sender, EventArrivedEventArgs args)
         {
+            HandleProcessEvent(args, ProcessEventType.Start);
+        }
+
+        private void OnProcessStopEventArrived(object sender, EventArrivedEventArgs args)
+        {
+            HandleProcessEvent(args, ProcessEventType.Stop);
+        }
+
+        private void HandleProcessEvent(EventArrivedEventArgs args, ProcessEventType eventType)
+        {
             try
             {
-                var data = default(ProcessEventData);
-
-                var properties = args
-                    .NewEvent
-                    .Properties
-                    .ToDictionary();
-
-                var processName = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.ProcessNamePropertyKey));
-
-                if (string.IsNullOrWhiteSpace(processName))
+                if (!TryGetProcessEventData(args, out var data) || data == null)
                     return;
 
-                var processId = Convert.ToInt32(properties.GetValueOrDefault(WMIProcessConstants.ProcessIdPropertyKey));
-                processId = processId == 0 ? -1 : processId;
+                if (data.ProcessID != -1)
+                    QueryForProcessDetails(data);
 
-                var parentProcessId = Convert.ToInt32(properties.GetValueOrDefault(WMIProcessConstants.ParentProcessIdPropertyKey));
-                parentProcessId = parentProcessId == 0 ? -1 : parentProcessId;
-
-                var builder = ProcessEventDataBuilder.Create(processName)
-                        .SetProperties(properties)
-                        .SetProcessId(processId)
-                        .SetParentProcessId(parentProcessId);
-
-                if (processId != -1)
-                {
-                    _processDetailsObjectSearcher.Query = new ObjectQuery(string.Format(WMIProcessConstants.Win32ProcessDetailsQueryTemplate, processId));
-
-                    using (var results = _processDetailsObjectSearcher.Get())
-                    {
-                        var result = results.OfType<ManagementObject>().FirstOrDefault();
-
-                        if (result != null)
-                        {
-                            properties = result.Properties.ToDictionary();
-
-                            var caption = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.CaptionPropertyKey));
-                            var description = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.DescriptionPropertyKey));
-                            var executablePath = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.ExecutablePathPropertyKey));
-                            var commandLine = Convert.ToString(properties.GetValueOrDefault(WMIProcessConstants.CommandLinePropertyKey));
-
-                            builder = builder
-                                .SetCaption(caption)
-                                .SetDescription(description)
-                                .SetExecutablePath(executablePath)
-                                .SetCommandLine(commandLine);
-                        }
-                    }
-                }
-
-                data = builder.Build();
-
-                OnProcessStarted(data);
+                if (eventType == ProcessEventType.Start)
+                    OnProcessStarted(data);
+                else
+                    OnProcessStopped(data);
             }
             catch { }
         }
 
-        public override ValueTask DisposeAsync()
+        private static bool TryGetProcessEventData(EventArrivedEventArgs args, out ProcessEventData? data)
         {
-            throw new NotImplementedException();
+            data = null;
+
+            var properties = GetEventPropertiesOrDefault(args);
+
+            if (properties == null)
+                return false;
+
+            var processName = GetProcessName(properties);
+
+            if (string.IsNullOrWhiteSpace(processName))
+                return false;
+
+            data = new ProcessEventData(processName)
+            {
+                ProcessID = GetProcessID(properties),
+                ParentProcessID = GetParentProcessID(properties)
+            };
+
+            foreach (var property in properties)
+                data.Properties.Add(property.Key, property.Value);
+
+            return true;
+        }
+
+        private static Dictionary<string, object>? GetEventPropertiesOrDefault(EventArrivedEventArgs args)
+        {
+            var properties = args?
+                    .NewEvent?
+                    .Properties?
+                    .ToDictionary();
+
+            return properties == null || properties.Count == 0 ?
+                null :
+                properties;
+        }
+
+        private static string? GetProcessName(Dictionary<string, object> properties)
+        {
+            return properties.GetTypedValueOrDefault<string>(WMIProcessConstants.ProcessNamePropertyKey);
+        }
+
+        private static int GetProcessID(Dictionary<string, object> properties)
+        {
+            return properties.GetTypedValueOrDefault<int>(WMIProcessConstants.ProcessIDPropertyKey);
+        }
+
+        private static int GetParentProcessID(Dictionary<string, object> properties)
+        {
+            return properties.GetTypedValueOrDefault<int>(WMIProcessConstants.ParentProcessIDPropertyKey);
+        }
+
+        private void QueryForProcessDetails(ProcessEventData data)
+        {
+            _processDetailsObjectSearcher.Query = new ObjectQuery(string.Format(WMIProcessConstants.Win32ProcessDetailsQueryTemplate, data.ProcessID));
+
+            using (var results = _processDetailsObjectSearcher.Get())
+            {
+                var result = results.OfType<ManagementObject>().FirstOrDefault();
+
+                if (result != null)
+                {
+                    var properties = result.Properties.ToDictionary();
+
+                    if (properties.TryGetTypedValue<string>(WMIProcessConstants.CaptionPropertyKey, out var caption) && caption != null)
+                        data.Properties.Add(WMIProcessConstants.CaptionPropertyKey, caption);
+
+                    if (properties.TryGetTypedValue<string>(WMIProcessConstants.DescriptionPropertyKey, out var description) && description != null)
+                        data.Properties.Add(WMIProcessConstants.DescriptionPropertyKey, description);
+
+                    if (properties.TryGetTypedValue<string>(WMIProcessConstants.ExecutablePathPropertyKey, out var executablePath) && executablePath != null)
+                        data.ExecutablePath = executablePath;
+
+                    if (properties.TryGetTypedValue<string>(WMIProcessConstants.CommandLinePropertyKey, out var commandLine) && commandLine != null)
+                        data.Properties.Add(WMIProcessConstants.CommandLinePropertyKey, commandLine);
+                }
+            }
+        }
+
+        public override async ValueTask DisposeAsync()
+        {
+            await Stop();
         }
     }
 }

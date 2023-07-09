@@ -5,56 +5,37 @@ using System.Runtime.Versioning;
 
 namespace ProcessMonitoring
 {
+    [SupportedOSPlatform("windows")]
     public static class ProcessMonitorFactory
     {
         public static IProcessMonitor Create(ProcessMonitoringStrategy strategy)
         {
             if (strategy == ProcessMonitoringStrategy.WMI)
-            {
-                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    throw new NotSupportedException("Process monitoring via WMI is only available on the Windows platform!");
+                return CreateWMIProcessMonitor();
 
-                if (!Permissions.IsAdministrator())
-                    throw new InvalidOperationException("Process monitoring via WMI requires administrator privileges!");
-            }
-
-            if (strategy == ProcessMonitoringStrategy.ETW)
-            {
-                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    throw new NotSupportedException("Process monitoring via ETW is only available on the Windows platform!");
-
-                if (!Permissions.IsAdministrator())
-                    throw new InvalidOperationException("Process monitoring via ETW requires administrator privileges!");
-            }
-
-            switch (strategy)
-            {
-                case ProcessMonitoringStrategy.WMI:
-                    return CreateWMIProcessMonitor();
-                case ProcessMonitoringStrategy.ETW:
-                    return CreateETWProcessMonitor();
-                case ProcessMonitoringStrategy.Snapshots:
-                    return CreateSnapshotProcessMonitor();
-                default:
-                    throw new ArgumentException(null, nameof(strategy));
-            }
+            return CreateWMIProcessMonitor();
         }
 
-        [SupportedOSPlatform("windows")]
-        private static IProcessMonitor CreateETWProcessMonitor()
-        {
-            return new ProcessMonitorViaETW();
-        }
-
-        private static IProcessMonitor CreateSnapshotProcessMonitor()
-        {
-            return new ProcessMonitorViaSnapshots();
-        }
-
-        [SupportedOSPlatform("windows")]
         private static IProcessMonitor CreateWMIProcessMonitor()
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new NotSupportedException("Process monitoring via WMI is only available on the Windows platform!");
+
+            if (!Permissions.IsAdministrator())
+                throw new InvalidOperationException("Process monitoring via WMI requires administrator privileges!");
+
             return new ProcessMonitorViaWMI();
+        }
+
+        public static IProcessMonitor CreateETWProcessMonitor()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                throw new NotSupportedException("Process monitoring via ETW is only available on the Windows platform!");
+
+            if (!Permissions.IsAdministrator())
+                throw new InvalidOperationException("Process monitoring via ETW requires administrator privileges!");
+
+            return new ProcessMonitorViaETW();
         }
     }
 }

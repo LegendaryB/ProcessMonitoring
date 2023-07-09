@@ -6,8 +6,8 @@
         internal const string Win32ProcessStopTraceQuery = "SELECT * FROM Win32_ProcessStopTrace";
 
         internal const string ProcessNamePropertyKey = "ProcessName";
-        internal const string ProcessIdPropertyKey = "ProcessID";
-        internal const string ParentProcessIdPropertyKey = "ParentProcessId";
+        internal const string ProcessIDPropertyKey = "ProcessID";
+        internal const string ParentProcessIDPropertyKey = "ParentProcessID";
         internal const string CaptionPropertyKey = "Caption";
         internal const string CommandLinePropertyKey = "CommandLine";
         internal const string ExecutablePathPropertyKey = "ExecutablePath";

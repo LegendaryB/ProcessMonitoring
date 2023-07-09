@@ -1,6 +1,4 @@
-﻿using ProcessMonitoring.Events;
-
-namespace ProcessMonitoring.Monitors
+﻿namespace ProcessMonitoring.Monitors
 {
     internal abstract class ProcessMonitor : IProcessMonitor
     {

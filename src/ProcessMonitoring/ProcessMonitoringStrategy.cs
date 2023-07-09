@@ -2,7 +2,6 @@
 {
     public enum ProcessMonitoringStrategy
     {
-        Snapshots,
         ETW,
         WMI
     }
