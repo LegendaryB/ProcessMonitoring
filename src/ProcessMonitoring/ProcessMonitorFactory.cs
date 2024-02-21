@@ -13,7 +13,7 @@ namespace ProcessMonitoring
             if (strategy == ProcessMonitoringStrategy.WMI)
                 return CreateWMIProcessMonitor();
 
-            return CreateWMIProcessMonitor();
+            return CreateETWProcessMonitor();
         }
 
         private static IProcessMonitor CreateWMIProcessMonitor()
